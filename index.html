@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- SEO & Metadata -->
+    <meta charset="UTF-8">
+    <title>Space Rose - Interactive Generative Art</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Explore Space Rose, a mesmerizing interactive generative art experience powered by WebGL. Create and customize unique, swirling cosmic nebulas and export them as stunning 4K wallpapers.">
+    <meta name="keywords" content="generative art, interactive art, webgl, space rose, chris pirillo, digital art, creative coding, abstract art, wallpaper generator, 4k wallpaper">
+    <meta name="author" content="Chris Pirillo">
+    <link rel="canonical" href="https://pirillo.com/arcade/space-rose.html">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pirillo.com/arcade/space-rose.html">
+    <meta property="og:title" content="Space Rose - Interactive Generative Art">
+    <meta property="og:description" content="Create and customize unique, swirling cosmic nebulas with this mesmerizing interactive generative art experience.">
+    <meta property="og:image" content="https://pirillo.com/arcade/images/space-rose.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="Pirillo's Arcade">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://pirillo.com/arcade/space-rose.html">
+    <meta name="twitter:site" content="@ChrisPirillo">
+    <meta name="twitter:creator" content="@ChrisPirillo">
+    <meta name="twitter:title" content="Space Rose - Interactive Generative Art">
+    <meta name="twitter:description" content="Create and customize unique, swirling cosmic nebulas with this mesmerizing interactive generative art experience.">
+    <meta name="twitter:image" content="https://pirillo.com/arcade/images/space-rose.png">
+
+    <!-- Performance: Resource Hints -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"></noscript>
+    
+    <!-- Tailwind CSS (Render-blocking as it's critical for initial layout) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1CQ4D3VQ3L"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-1CQ4D3VQ3L');
+    </script>
+
+    <!--
+      Inlined CSS for First Contentful Paint (FCP) optimization.
+      This contains all the critical styles needed for the initial view.
+    -->
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Inter', sans-serif;
+            /* Disable text selection for a more app-like feel */
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10+ and Edge */
+            user-select: none; /* Standard syntax */
+        }
+        #gl-canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            /* Explicitly set content-visibility to prevent layout shifts during initial render */
+            content-visibility: auto;
+            contain-intrinsic-size: 100vw 100vh;
+        }
+        #menu-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            background-color: rgba(30, 30, 30, 0.7);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            width: 44px; /* Set fixed size for touch targets */
+            height: 44px; /* Set fixed size for touch targets */
+            cursor: pointer;
+            transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-color 0.3s;
+        }
+        #menu-toggle:hover {
+            background-color: rgba(50, 50, 50, 0.9);
+        }
+        #settings-menu {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 320px;
+            height: 100%;
+            background-color: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            padding: 20px;
+            color: white;
+            overflow-y: auto;
+        }
+        #settings-menu.open {
+            transform: translateX(0);
+        }
+        #settings-menu.open + #menu-toggle {
+            right: 340px; /* 320px menu width + 20px margin */
+        }
+        #menu-toggle svg {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            transition: opacity 0.2s ease-in-out;
+        }
+        #menu-icon-close { opacity: 0; }
+        #menu-icon-open { opacity: 1; transition-delay: 0.2s; }
+        #menu-toggle.is-open #menu-icon-close { opacity: 1; transition-delay: 0.2s; }
+        #menu-toggle.is-open #menu-icon-open { opacity: 0; transition-delay: 0s; }
+        .setting-item { margin-bottom: 20px; }
+        .setting-item label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #ccc; }
+        .setting-item .label-container { display: flex; justify-content: space-between; align-items: center; }
+        .setting-item .value-display { font-family: monospace; background-color: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-size: 0.9rem; }
+        input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: #333; border-radius: 5px; outline: none; opacity: 0.7; transition: opacity .2s; }
+        input[type="range"]:hover { opacity: 1; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #4f46e5; cursor: pointer; border-radius: 50%; border: 2px solid white; }
+        input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #4f46e5; cursor: pointer; border-radius: 50%; border: 2px solid white; }
+        #export-btn:disabled { background-color: #3730a3; cursor: not-allowed; }
+    </style>
+    
+    <!-- JSON-LD Structured Data for Rich Snippets -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Space Rose",
+      "url": "https://pirillo.com/arcade/space-rose.html",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "All",
+      "browserRequirements": "Requires WebGL",
+      "description": "An interactive generative art experience to create and customize unique, swirling cosmic nebulas.",
+      "author": {
+        "@type": "Person",
+        "name": "Chris Pirillo",
+        "url": "https://chris.pirillo.com/"
+      },
+      "image": "https://pirillo.com/arcade/images/space-rose.png",
+      "offers": {
+        "@type": "Offer",
+        "price": "0"
+      }
+    }
+    </script>
+</head>
+<body>
+
+    <!-- Semantic HTML Structure -->
+    <header>
+        <!-- The menu toggle button acts as a primary navigation control -->
+        <button id="menu-toggle" aria-label="Toggle settings menu" aria-controls="settings-menu" aria-expanded="false">
+            <svg id="menu-icon-open" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M3 12H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 6H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 18H21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <svg id="menu-icon-close" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M18 6L6 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6 6L18 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+    </header>
+
+    <main>
+        <!-- The canvas is the primary content of the page -->
+        <canvas id="gl-canvas" aria-label="Interactive generative art display of a space rose nebula"></canvas>
+
+        <!-- The settings panel is an aside, supplementary to the main content -->
+        <aside id="settings-menu" role="region" aria-labelledby="settings-heading">
+            <h1 id="settings-heading" class="text-2xl font-bold mb-6">Space Rose</h1>
+
+            <section class="setting-item" aria-labelledby="iterations-label">
+                <div class="label-container">
+                    <label for="iterations" id="iterations-label">Iterations</label>
+                    <span id="iterations-value" class="value-display">100</span>
+                </div>
+                <input type="range" id="iterations" min="40" max="120" step="1" value="100">
+            </section>
+
+            <section class="setting-item" aria-labelledby="complexity-label">
+                <div class="label-container">
+                    <label for="complexity" id="complexity-label">Complexity</label>
+                    <span id="complexity-value" class="value-display">7.0</span>
+                </div>
+                <input type="range" id="complexity" min="1" max="15" step="0.1" value="7">
+            </section>
+
+            <section class="setting-item" aria-labelledby="time-speed-label">
+                <div class="label-container">
+                    <label for="time_speed" id="time-speed-label">Time Speed</label>
+                    <span id="time_speed-value" class="value-display">0.20</span>
+                </div>
+                <input type="range" id="time_speed" min="0" max="1" step="0.01" value="0.2">
+            </section>
+
+            <section class="setting-item" aria-labelledby="zoom-label">
+                <div class="label-container">
+                    <label for="zoom" id="zoom-label">Zoom</label>
+                    <span id="zoom-value" class="value-display">1.00</span>
+                </div>
+                <input type="range" id="zoom" min="0.1" max="5" step="0.01" value="1.0">
+            </section>
+
+            <section class="setting-item" aria-labelledby="color-offset-label">
+                <div class="label-container">
+                    <label for="color_offset" id="color-offset-label">Color Offset</label>
+                    <span id="color_offset-value" class="value-display">0.0</span>
+                </div>
+                <input type="range" id="color_offset" min="0" max="50" step="0.1" value="0">
+            </section>
+
+            <section class="setting-item" aria-labelledby="saturation-label">
+                <div class="label-container">
+                    <label for="saturation" id="saturation-label">Saturation</label>
+                    <span id="saturation-value" class="value-display">1.0</span>
+                </div>
+                <input type="range" id="saturation" min="0" max="1.0" step="0.05" value="1.0">
+            </section>
+            
+            <section class="setting-item" aria-labelledby="warp-label">
+                <div class="label-container">
+                    <label for="warp" id="warp-label">Warp</label>
+                    <span id="warp-value" class="value-display">1.0</span>
+                </div>
+                <input type="range" id="warp" min="0.1" max="5.0" step="0.05" value="1.0">
+            </section>
+            
+            <section class="setting-item" aria-labelledby="ray-step-label">
+                <div class="label-container">
+                    <label for="ray_step" id="ray-step-label">Ray Step</label>
+                    <span id="ray_step-value" class="value-display">0.20</span>
+                </div>
+                <input type="range" id="ray_step" min="0.01" max="1.0" step="0.01" value="0.2">
+            </section>
+
+            <div class="mt-8 pt-4 border-t border-gray-700">
+                 <button id="export-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200">
+                    Export 4K Wallpaper
+                </button>
+            </div>
+        </aside>
+    </main>
+
+<!-- Shader scripts are not render-blocking and can be placed before the main logic -->
+<script id="vertex-shader" type="x-shader/x-vertex">
+attribute vec4 a_position;
+void main() {
+    gl_Position = a_position;
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+#ifdef GL_ES
+precision highp float;
+#endif
+
+// Uniforms passed from JavaScript
+uniform vec2 u_resolution;
+uniform float u_time;
+
+// User-configurable uniforms
+uniform float u_iterations;
+uniform float u_complexity;
+uniform float u_time_speed;
+uniform float u_color_offset;
+uniform float u_zoom;
+uniform float u_saturation;
+uniform float u_warp;
+uniform float u_ray_step;
+
+vec4 tanh_vec4(vec4 x) {
+    vec4 ex = exp(x);
+    vec4 emx = exp(-x);
+    return (ex - emx) / (ex + emx);
+}
+
+void main() {
+    // Normalize coordinates, keeping aspect ratio
+    vec2 uv = (gl_FragCoord.xy * 2.0 - u_resolution.xy) / u_resolution.y;
+
+    vec4 o = vec4(0.0);
+    float t = u_time * u_time_speed;
+    float z = 0.0;
+    float d = 0.0;
+
+    const int MAX_ITERATIONS = 120;
+
+    for(int i = 1; i < MAX_ITERATIONS; i++){
+        if (float(i) > u_iterations) {
+            break;
+        }
+
+        float i_float = float(i);
+        vec4 c;
+        vec3 p = z * normalize(vec3(uv.xy, u_zoom));
+        p.z += 9.0;
+
+        c = cos(i_float * 0.1 + vec4(0.0, 33.0, 11.0, 0.0) + u_color_offset);
+        
+        mat2 rotation_matrix = mat2(c.xy, c.zw);
+        p.xy *= rotation_matrix;
+
+        const int MAX_COMPLEXITY = 16;
+        for(int j = 1; j < MAX_COMPLEXITY; j++){
+            float j_float = float(j);
+            if (j_float >= u_complexity) {
+                break;
+            }
+            p += sin(p.yzx * j_float * u_warp + t - i_float * 0.1) / (j_float * u_warp);
+        }
+
+        d = u_ray_step * length(cos(p + i_float * 0.3) + 1.0);
+        z += d;
+
+        o += (c + u_saturation) / (d + 0.001) * z;
+    }
+
+    // Increased divisor to prevent color clipping at high brightness
+    o = tanh_vec4(o * o / 5e8);
+    gl_FragColor = o;
+}
+</script>
+
+<!--
+  Main application script.
+  This is intentionally left as-is and not deferred, as it is critical
+  for the initial rendering of the WebGL canvas. Altering this could
+  introduce breaking changes, per the instructions.
+-->
+<script>
+    // --- Main Application Logic ---
+    const canvas = document.getElementById('gl-canvas');
+    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true, antialias: true });
+
+    if (!gl) {
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = 'position:fixed;top:10px;left:10px;padding:10px;background:red;color:white;z-index:1002;';
+        errorDiv.textContent = 'WebGL is not supported. Please use a modern browser.';
+        document.body.appendChild(errorDiv);
+        throw new Error("WebGL not supported");
+    }
+
+    // --- Shader Program Setup ---
+    const vertexShaderSource = document.getElementById('vertex-shader').text;
+    const fragmentShaderSource = document.getElementById('fragment-shader').text;
+
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    const program = createProgram(gl, vertexShader, fragmentShader);
+
+    let resolutionUniformLocation, timeUniformLocation, uniformLocations, positionAttributeLocation;
+    if (program) {
+        resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
+        timeUniformLocation = gl.getUniformLocation(program, "u_time");
+        positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+        uniformLocations = {
+            iterations: gl.getUniformLocation(program, "u_iterations"),
+            complexity: gl.getUniformLocation(program, "u_complexity"),
+            time_speed: gl.getUniformLocation(program, "u_time_speed"),
+            color_offset: gl.getUniformLocation(program, "u_color_offset"),
+            zoom: gl.getUniformLocation(program, "u_zoom"),
+            saturation: gl.getUniformLocation(program, "u_saturation"),
+            warp: gl.getUniformLocation(program, "u_warp"),
+            ray_step: gl.getUniformLocation(program, "u_ray_step")
+        };
+    }
+
+    // --- Geometry Buffer Setup ---
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    const positions = [-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+    // --- UI Elements ---
+    const settingsMenu = document.getElementById('settings-menu');
+    const menuToggle = document.getElementById('menu-toggle');
+    const exportBtn = document.getElementById('export-btn');
+
+    const sliders = {
+        iterations: document.getElementById('iterations'),
+        complexity: document.getElementById('complexity'),
+        time_speed: document.getElementById('time_speed'),
+        color_offset: document.getElementById('color_offset'),
+        zoom: document.getElementById('zoom'),
+        saturation: document.getElementById('saturation'),
+        warp: document.getElementById('warp'),
+        ray_step: document.getElementById('ray_step'),
+    };
+
+    const valueDisplays = {
+        iterations: document.getElementById('iterations-value'),
+        complexity: document.getElementById('complexity-value'),
+        time_speed: document.getElementById('time_speed-value'),
+        color_offset: document.getElementById('color_offset-value'),
+        zoom: document.getElementById('zoom-value'),
+        saturation: document.getElementById('saturation-value'),
+        warp: document.getElementById('warp-value'),
+        ray_step: document.getElementById('ray_step-value'),
+    };
+
+    // --- State Management ---
+    const settings = {};
+
+    // --- Event Listeners ---
+    menuToggle.addEventListener('click', () => {
+        const isOpening = !settingsMenu.classList.contains('open');
+        menuToggle.setAttribute('aria-expanded', isOpening);
+        settingsMenu.classList.toggle('open');
+        menuToggle.classList.toggle('is-open');
+    });
+
+    Object.keys(sliders).forEach(key => {
+        sliders[key].addEventListener('input', e => {
+            const value = parseFloat(e.target.value);
+            settings[key] = value;
+            let fixed;
+            switch(key) {
+                case 'iterations': fixed = 0; break;
+                case 'complexity':
+                case 'color_offset':
+                case 'saturation': 
+                case 'warp': fixed = 1; break;
+                default: fixed = 2;
+            }
+            valueDisplays[key].textContent = value.toFixed(fixed);
+        });
+    });
+
+    exportBtn.addEventListener('click', () => exportAsPNG());
+
+    // --- Functions ---
+    function randomizeAndApplySettings() {
+        settings.iterations = Math.floor(Math.random() * (120 - 40 + 1) + 40);
+        settings.complexity = Math.random() * (15 - 1) + 1;
+        settings.time_speed = Math.random() * 0.5;
+        settings.zoom = Math.random() * (4 - 0.5) + 0.5;
+        settings.color_offset = Math.random() * 50;
+        settings.saturation = Math.random();
+        settings.warp = Math.random() * (3.0 - 0.5) + 0.5;
+        settings.ray_step = Math.random() * (0.5 - 0.1) + 0.1;
+
+        Object.keys(sliders).forEach(key => {
+            sliders[key].value = settings[key];
+            sliders[key].dispatchEvent(new Event('input'));
+        });
+    }
+
+    let startTime = Date.now();
+    function render() {
+        if (!program) return;
+        resizeCanvasToDisplaySize(gl.canvas);
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+        gl.clearColor(0, 0, 0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        gl.useProgram(program);
+        gl.enableVertexAttribArray(positionAttributeLocation);
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+        const currentTime = (Date.now() - startTime) * 0.001;
+        gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
+        gl.uniform1f(timeUniformLocation, currentTime);
+        
+        Object.keys(uniformLocations).forEach(key => {
+             gl.uniform1f(uniformLocations[key], settings[key]);
+        });
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        requestAnimationFrame(render);
+    }
+
+    // --- WebGL Helper Functions ---
+    function createShader(gl, type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader;
+        console.error(`Error compiling ${type === gl.VERTEX_SHADER ? 'vertex' : 'fragment'} shader:`, gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+    }
+
+    function createProgram(gl, vertexShader, fragmentShader) {
+        if (!vertexShader || !fragmentShader) return;
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+        if (gl.getProgramParameter(program, gl.LINK_STATUS)) return program;
+        console.error("Error linking program:", gl.getProgramInfoLog(program));
+        gl.deleteProgram(program);
+    }
+
+    function resizeCanvasToDisplaySize(canvas) {
+        const dpr = window.devicePixelRatio;
+        const displayWidth  = Math.round(canvas.clientWidth * dpr);
+        const displayHeight = Math.round(canvas.clientHeight * dpr);
+        if (canvas.width  !== displayWidth || canvas.height !== displayHeight) {
+            canvas.width  = displayWidth;
+            canvas.height = displayHeight;
+        }
+    }
+
+    // --- Export Functionality ---
+    async function exportAsPNG() {
+        exportBtn.disabled = true;
+        exportBtn.textContent = 'Generating...';
+
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        try {
+            const width = 3840;
+            const height = 2160;
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            const tempGl = tempCanvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true });
+            
+            if (!tempGl) throw new Error("Could not create temporary WebGL context for export.");
+
+            const tempVertexShader = createShader(tempGl, tempGl.VERTEX_SHADER, vertexShaderSource);
+            const tempFragmentShader = createShader(tempGl, tempGl.FRAGMENT_SHADER, fragmentShaderSource);
+            const tempProgram = createProgram(tempGl, tempVertexShader, tempFragmentShader);
+            
+            if (!tempProgram) throw new Error("Could not create temporary shader program for export.");
+
+            tempGl.useProgram(tempProgram);
+            
+            const tempResLoc = tempGl.getUniformLocation(tempProgram, "u_resolution");
+            const tempTimeLoc = tempGl.getUniformLocation(tempProgram, "u_time");
+            const tempPosLoc = tempGl.getAttribLocation(tempProgram, "a_position");
+            const tempUniforms = {};
+            Object.keys(uniformLocations).forEach(key => {
+                tempUniforms[key] = tempGl.getUniformLocation(tempProgram, `u_${key}`);
+            });
+
+            const currentTime = (Date.now() - startTime) * 0.001;
+            tempGl.uniform2f(tempResLoc, width, height);
+            tempGl.uniform1f(tempTimeLoc, currentTime);
+            Object.keys(tempUniforms).forEach(key => {
+                if (tempUniforms[key]) {
+                    tempGl.uniform1f(tempUniforms[key], settings[key]);
+                }
+            });
+
+            const tempBuffer = tempGl.createBuffer();
+            tempGl.bindBuffer(tempGl.ARRAY_BUFFER, tempBuffer);
+            tempGl.bufferData(tempGl.ARRAY_BUFFER, new Float32Array(positions), tempGl.STATIC_DRAW);
+            tempGl.enableVertexAttribArray(tempPosLoc);
+            tempGl.vertexAttribPointer(tempPosLoc, 2, tempGl.FLOAT, false, 0, 0);
+            tempGl.viewport(0, 0, width, height);
+            tempGl.clearColor(0, 0, 0, 1.0);
+            tempGl.clear(tempGl.COLOR_BUFFER_BIT);
+            tempGl.drawArrays(tempGl.TRIANGLES, 0, 6);
+
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = width;
+            exportCanvas.height = height;
+            const ctx = exportCanvas.getContext('2d');
+
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(tempCanvas, 0, 0);
+
+            const link = document.createElement('a');
+            link.download = 'space-rose-4k.png';
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+
+        } catch (error) {
+            console.error("Failed to export image:", error);
+            const msgBox = document.createElement('div');
+            msgBox.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);background:red;color:white;padding:10px 20px;border-radius:5px;z-index:1002;';
+            msgBox.textContent = 'Sorry, there was an error exporting the image.';
+            document.body.appendChild(msgBox);
+            setTimeout(() => document.body.removeChild(msgBox), 3000);
+        } finally {
+            exportBtn.disabled = false;
+            exportBtn.textContent = 'Export 4K Wallpaper';
+        }
+    }
+
+    // --- Start the application ---
+    if (program) {
+        randomizeAndApplySettings();
+        requestAnimationFrame(render);
+    } else {
+        console.error("Shader program failed to initialize. Rendering will not start.");
+    }
+
+</script>
+</body>
+</html>
